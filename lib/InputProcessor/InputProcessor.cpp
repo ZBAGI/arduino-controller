@@ -5,64 +5,69 @@ InputProcessor::InputProcessor(Settings settings)
     this->settings = settings;
 }
 
-void InputProcessor::EscapeButtonClicked() {
-    this->clearBuilders();
+bool InputProcessor::EscapeButtonClicked() {
+    this->emptyBuffers();
     this->resetRequests+=1;
-    if(this->resetRequests >= 10)
+    if(this->resetRequests >= 10) {
         this->settings.onSystemResetRequest();
+        return true;
+    }
+    return false;
 }
 
-void InputProcessor::ButtonClicked(String button) {
+bool InputProcessor::ButtonClicked(const uint8_t button) {
     if(this->status == Disabled)
-        return;
+        return false;
 
     this->lastActionMillis = millis();
 
-    if(this->codeBuilder != "" || this->tagBuilder == "") {
-        this->codeBuilder =  this->codeBuilder + button;
-        if(this->codeBuilder.length() == 16) {
-            this->settings.onCodeAccessRequest(this->codeBuilder);
-            this->clearBuilders();
-            return;
+    if(strlen(this->codeBuffer) != 0 || strlen(this->tagBuffer) == 0) {
+        strncat(this->codeBuffer, (char*)button, MAX_CODE_LENGTH);
+
+        if(strlen(this->codeBuffer) == 16) {
+            this->settings.onCodeAccessRequest(this->codeBuffer);
+            this->emptyBuffers();
+            return true;
         }
     }
 
-    if(this->tagBuilder != "") {
-        this->pinBuilder = this->pinBuilder + button;
-        if(this->pinBuilder.length() == 4) {
-            this->settings.onTagPinAccessRequest(this->tagBuilder, this->pinBuilder);
-            this->clearBuilders();
-            return;
+    if(strlen(this->tagBuffer) != 0) {
+        strncat(this->pinBuffer, (char*)button, MAX_PIN_LENGTH);
+
+        Serial.println(this->pinBuffer);
+        if(strlen(this->pinBuffer) == 4) {
+            this->settings.onTagPinAccessRequest(this->tagBuffer, this->pinBuffer);
+            this->emptyBuffers();
         }
     }
+    return true;
 }
 
-void InputProcessor::TagScanned(String tagId) {
+bool InputProcessor::TagScanned(const char* tagId) {
     if(this->status == Disabled)
-        return;
+        return false;
     
-    if(this->tagBuilder != "" || this->codeBuilder != "")
-        this->clearBuilders();
-
-    this->tagBuilder = tagId;
+    this->emptyBuffers();
+    strncat (this->tagBuffer, tagId, MAX_TAG_LENGTH);
 
     if(this->status == OnlyTag) {
-        this->settings.onTagAccessRequest(this->tagBuilder);
-        this->clearBuilders();
+        this->settings.onTagAccessRequest(this->tagBuffer);
+        this->emptyBuffers();
     }
+    return true;
 }
 
-void InputProcessor::clearBuilders() {
-    this->codeBuilder = "";
-    this->tagBuilder = "";
-    this->pinBuilder = "";
+void InputProcessor::emptyBuffers() {
+    this->codeBuffer[0] = '\0';
+    this->tagBuffer[0] = '\0';
+    this->pinBuffer[0] = '\0';
     this->lastActionMillis = 0;
 }
 
 void InputProcessor::Update() {
     if(this->lastActionMillis != 0 && (this->lastActionMillis + this->settings.timeout) < millis()) {
-        if(this->codeBuilder != "" || this->tagBuilder != "" || this->pinBuilder != "")
+        if(strlen(this->codeBuffer) != 0 || strlen(this->tagBuffer) != 0 || strlen(this->pinBuffer) != 0)
             this->settings.onTimeout();
-        this->clearBuilders();
+        this->emptyBuffers();
     }
 }

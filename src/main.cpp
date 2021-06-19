@@ -8,11 +8,11 @@
 #define PIN_D1 3
 
 // Forward definition just to keep everything clean in order
-static void tryAccessViaCode(String code);
-static void tryAccessViaTagAndPin(String tagId, String pin);
-static void tryAccessViaTag(String tagId);
+static void tryAccessViaCode(const char* code);
+static void tryAccessViaTagAndPin(const char* tagId, const char* pin);
+static void tryAccessViaTag(const char* tagId);
 static void resetSystem();
-static void actionFailed(String reason);
+static void actionFailed(const char* reason);
 static void actionTimeout();
 static void readBytes(uint8_t* data, uint8_t bits, const char* message);
 static void readBytesError(Wiegand::DataError error, uint8_t* rawData, uint8_t rawBits, const char* message);
@@ -59,8 +59,8 @@ Api::Settings apiReceptionSettings = {
 	
 	.macAddress = {222,173,254,171,253,253},
 	.ip = "192.168.1.177",
-	.apiKey = "xxxxxxxxxxxxxxxxxx",
-	.apiHost = "xxxxxxxxxxxxxxxxxxx",
+	.apiKey = "xxxxxxxxxxxxxx",
+	.apiHost = "xxxxxxxxxxxxxx",
 	.accessPointId = 3,
 	.timeout = 14000
 };
@@ -72,8 +72,8 @@ Api::Settings apiUpperDoorSettings = {
 
 	.macAddress = {222,173,254,171,253,254},
 	.ip = "192.168.1.178",
-	.apiKey = "xxxxxxxxxxxxxxxxxx",
-	.apiHost = "xxxxxxxxxxxxxxxxxx",
+	.apiKey = "xxxxxxxxxxxxxx",
+	.apiHost = "xxxxxxxxxxxxxx",
 	.accessPointId = 2,
 	.timeout = 14000
 };
@@ -85,8 +85,8 @@ Api::Settings apiFrontDoorSettings = {
 
 	.macAddress = {222,173,254,171,253,255},
 	.ip = "192.168.1.179",
-	.apiKey = "xxxxxxxxxxxxxxxxxxx",
-	.apiHost = "xxxxxxxxxxxxxxxxxxxxxx",
+	.apiKey = "xxxxxxxxxxxxxx",
+	.apiHost = "xxxxxxxxxxxxxx",
 	.accessPointId = 1,
 	.timeout = 14000
 };
@@ -119,7 +119,7 @@ void loop() {
 	api.Update();
 }
 
-void actionFailed(String reason) {
+void actionFailed(const char* reason) {
 	Serial.println("Input processor failed due to: ");
 	Serial.print(reason);
 	io.PlayErrorCode(0);
@@ -144,20 +144,25 @@ void processApiResponse(AccessRequestResponse response) {
 	}
 }
 
-void tryAccessViaTag(String tagId) {
-	Serial.println("Checking access for tag: '" + tagId + "'");
+void tryAccessViaTag(const char* tagId) {
+	Serial.print("Checking access for tag: ");
+	Serial.println(tagId);
 	processApiResponse(api.TagCanAccess(tagId));
 	api.checkStatus = true;
 }
 
-void tryAccessViaTagAndPin(String tagId, String pin) {
-	Serial.println("Checking access for tag: '" + tagId + "' and pin '" + pin + "'");
+void tryAccessViaTagAndPin(const char* tagId, const char* pin) {
+	Serial.print("Checking access for tag: ");
+	Serial.print(tagId);
+	Serial.print(" and pin ");
+	Serial.println(pin);
 	processApiResponse(api.TagAndPinCanAccess(tagId, pin));
 	api.checkStatus = true;
 }
 
-void tryAccessViaCode(String code) {
-	Serial.println("Checking access for code: '" + code + "'");
+void tryAccessViaCode(const char* code) {
+	Serial.print("Checking access for code: ");
+	Serial.println(code);
 	processApiResponse(api.CodeCanAccess(code));
 	api.checkStatus = true;
 }
@@ -197,7 +202,10 @@ void readBytes(uint8_t* data, uint8_t bits, const char* message) {
 			return;
 		}
 		api.checkStatus = false;
-		inputProcessor.ButtonClicked(String(data[0]));
+		if(!inputProcessor.ButtonClicked(data[0])) {
+			api.checkStatus = true;
+			io.PlayErrorCode(0);
+		}
 	} else {
 		uint32_t uid = (uint32_t) data[3] << 0
 			 | (uint32_t) data[2] << 8
@@ -206,7 +214,10 @@ void readBytes(uint8_t* data, uint8_t bits, const char* message) {
 		char tagId[11];  // max = 10 digits + terminating NUL
 		ultoa(uid, tagId, 10);  // convert to base 10
 		api.checkStatus = false;
-		inputProcessor.TagScanned(tagId);
+		if(!inputProcessor.TagScanned(tagId)) {
+			api.checkStatus = true;
+			io.PlayErrorCode(0);
+		}
 	}
 }
 

@@ -35,19 +35,20 @@
 			Api(Settings settings);
 			void Update();
 			void Init();
-			AccessRequestResponse CodeCanAccess(const String& code);
-			AccessRequestResponse TagAndPinCanAccess(const String& tagId, const String& pin);
-			AccessRequestResponse TagCanAccess(const String& tagId);
+			AccessRequestResponse CodeCanAccess(const char* code);
+			AccessRequestResponse TagAndPinCanAccess(const char* tagId, const char* pin);
+			AccessRequestResponse TagCanAccess(const char* tagId);
 			bool checkStatus = true;
 		private:
+			char statusUrl[100];
 			int failedRequests = 0;
 			int failedConnections = 0;
 			unsigned long lastStatusCheck = 0;
 			bool locked = true;
 			bool requirePin = true;
-			AccessRequestResponse Request(String url);
-			int RawRequest(String url);
+			AccessRequestResponse Request(const char* url);
+			int RawRequest(const char* url);
 			EthernetClient ethernetClient;
-			HttpClient httpClient = HttpClient(ethernetClient, "xxxxxxxxxxxxxxx", 80);
+			HttpClient httpClient = HttpClient(ethernetClient, "treningssenterstavanger.api.clubhub.no", 80);
 	};
 #endif

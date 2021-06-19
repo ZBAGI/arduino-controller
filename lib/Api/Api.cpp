@@ -3,6 +3,7 @@
 Api::Api(Settings settings)
 {
     this->settings = settings;
+    snprintf(this->statusUrl, sizeof(this->statusUrl), "/v1/access-points/%d", this->settings.accessPointId);
 }
 
 void Api::Init() {
@@ -46,9 +47,10 @@ void Api::Update() {
         }
 
         Serial.println("Updating status...");
-        int status = this->RawRequest("/v1/access-points/" + String(this->settings.accessPointId));
+        int status = this->RawRequest(this->statusUrl);
         Serial.print("Request Status:");
         Serial.println(status);
+        delay(100);
         if(status == HTTP_SUCCESS) {
             this->failedConnections = 0;
             int responseCode = httpClient.responseStatusCode();
@@ -56,7 +58,7 @@ void Api::Update() {
 
             Serial.print("Response Code:");
             Serial.println(responseCode);
-            Serial.print("Response body:");
+            Serial.print("Response body:" + responseBody);
             Serial.println(responseBody);
 
 
@@ -88,24 +90,34 @@ void Api::Update() {
     }
 }
 
-AccessRequestResponse Api::CodeCanAccess(const String& code) {
-    // This crap not working
-	return this->Request("/v1/access-points/can-access()?code="+code);
+AccessRequestResponse Api::CodeCanAccess(const char* code) {
+    char url[100];
+    snprintf(url, sizeof(url), "/v1/access-points/can-access()\?accessPointId=%d&code=%s", this->settings.accessPointId, code);
+    Serial.println("checking:");
+    Serial.println(url);
+    return this->Request(url);
 }
 
-AccessRequestResponse Api::TagAndPinCanAccess(const String& tagId, const String& pin) {
-    // This crap not working
-    return this->Request("/v1/access-points/can-access()?accessPointId="+String(this->settings.accessPointId)+"&tagId="+tagId+"&pin="+pin);
+AccessRequestResponse Api::TagAndPinCanAccess(const char* tagId, const char* pin) {
+    char url[100];
+    snprintf(url, sizeof(url), "/v1/access-points/can-access()\?accessPointId=%d&tagId=%s&pin=%s", this->settings.accessPointId, tagId, pin);
+    Serial.println("checking:");
+    Serial.println(url);
+    return this->Request(url);
 }
 
-AccessRequestResponse Api::TagCanAccess(const String& tagId) {
-    // This crap not working
-    return this->Request("/v1/access-points/can-access()?accessPointId="+String(this->settings.accessPointId)+"&tagId="+tagId);
+AccessRequestResponse Api::TagCanAccess(const char* tagId) {
+    char url[100];
+    snprintf(url, sizeof(url), "/v1/access-points/can-access()\?accessPointId=%d&tagId=%s", this->settings.accessPointId, tagId);
+    Serial.println("checking:");
+    Serial.println(url);
+    return this->Request(url);
 }
 
-AccessRequestResponse Api::Request(String url) {
-    Serial.print("access requesting");
-    Serial.print("1/ Requesting:" + url);
+AccessRequestResponse Api::Request(const char* url) {
+    Serial.print("access requesting: ");
+    Serial.println(url);
+
 	int status = this->RawRequest(url);
     Serial.println("Request Status:");
 	Serial.println(status);
@@ -127,8 +139,9 @@ AccessRequestResponse Api::Request(String url) {
 	}
 }
 
-int Api::RawRequest(String url) {
-    Serial.println("raw Requesting: " + url);
+int Api::RawRequest(const char* url) {
+    Serial.print("raw Requesting: ");
+    Serial.println(url);
     httpClient.beginRequest();
 	int status = httpClient.get(url);
 	httpClient.sendHeader("api-key", this->settings.apiKey);
