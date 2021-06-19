@@ -21,7 +21,7 @@ bool InputProcessor::ButtonClicked(const uint8_t button) {
 
     this->lastActionMillis = millis();
 
-    if(strlen(this->codeBuffer) != 0 || strlen(this->tagBuffer) == 0) {
+    if(this->codeBuffer[0] != 0 || this->tagBuffer[0] == 0) {
         strncat(this->codeBuffer, (char*)button, MAX_CODE_LENGTH);
 
         if(strlen(this->codeBuffer) == 16) {
@@ -31,7 +31,7 @@ bool InputProcessor::ButtonClicked(const uint8_t button) {
         }
     }
 
-    if(strlen(this->tagBuffer) != 0) {
+    if(this->tagBuffer[0] != 0) {
         strncat(this->pinBuffer, (char*)button, MAX_PIN_LENGTH);
 
         Serial.println(this->pinBuffer);

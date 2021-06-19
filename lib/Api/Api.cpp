@@ -3,7 +3,6 @@
 Api::Api(Settings settings)
 {
     this->settings = settings;
-    snprintf(this->statusUrl, sizeof(this->statusUrl), "/v1/access-points/%d", this->settings.accessPointId);
 }
 
 void Api::Init() {
@@ -47,7 +46,9 @@ void Api::Update() {
         }
 
         Serial.println("Updating status...");
-        int status = this->RawRequest(this->statusUrl);
+        char url[100];
+        snprintf(url, sizeof(url), "/v1/access-points/%d", this->settings.accessPointId);
+        int status = this->RawRequest(url);
         Serial.print("Request Status:");
         Serial.println(status);
         delay(100);

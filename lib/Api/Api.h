@@ -40,7 +40,6 @@
 			AccessRequestResponse TagCanAccess(const char* tagId);
 			bool checkStatus = true;
 		private:
-			char statusUrl[100];
 			int failedRequests = 0;
 			int failedConnections = 0;
 			unsigned long lastStatusCheck = 0;
