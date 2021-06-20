@@ -19,10 +19,12 @@ bool InputProcessor::ButtonClicked(const uint8_t button) {
     if(this->status == Disabled)
         return false;
 
+    char bttnBuff[2];
+    snprintf(bttnBuff, 2, "%d", button);
     this->lastActionMillis = millis();
 
     if(this->codeBuffer[0] != 0 || this->tagBuffer[0] == 0) {
-        strncat(this->codeBuffer, (char*)button, MAX_CODE_LENGTH);
+        strncat(this->codeBuffer, bttnBuff, MAX_CODE_LENGTH);
 
         if(strlen(this->codeBuffer) == 16) {
             this->settings.onCodeAccessRequest(this->codeBuffer);
@@ -30,9 +32,9 @@ bool InputProcessor::ButtonClicked(const uint8_t button) {
             return true;
         }
     }
-
+    
     if(this->tagBuffer[0] != 0) {
-        strncat(this->pinBuffer, (char*)button, MAX_PIN_LENGTH);
+        strncat(this->pinBuffer, bttnBuff, MAX_PIN_LENGTH);
 
         Serial.println(this->pinBuffer);
         if(strlen(this->pinBuffer) == 4) {
